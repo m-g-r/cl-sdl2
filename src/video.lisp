@@ -22,12 +22,19 @@
     (t n)))
 
 (defun create-window (&key (title "SDL2 Window") (x :centered) (y :centered) (w 800) (h 600) flags)
-  (let ((window-flags (mask-apply 'sdl-window-flags flags))
-        (x (windowpos-from-coord x))
-        (y (windowpos-from-coord y)))
-    (sdl-collect
-     (check-null (sdl-create-window title x y w h window-flags))
-     (lambda (w) (sdl-destroy-window w)))))
+  (let* ((window-flags (mask-apply 'sdl-window-flags flags))
+         (x (windowpos-from-coord x))
+         (y (windowpos-from-coord y))
+         (shown (find :shown flags))
+         (window (check-null (sdl-create-window title x y w h window-flags))))
+    (prog1
+        (sdl-collect
+         window
+         (lambda (w) (sdl-destroy-window w)))
+      ;; workaround: when window is to be shown: hide an re-show to make visible (mgr, 20140213)
+      (when shown
+        (hide-window window)
+        (show-window window)))))
 
 (defun destroy-window (win)
   (sdl-cancel-collect win)
